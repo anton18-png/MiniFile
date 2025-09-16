@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>MiniFile ↔ Telegram Bot (без бэкенда)</title>
+	<link rel="stylesheet" href="styles.css" />
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+	<header class="app-header">
+		<h1>MiniFile ↔ Telegram Bot</h1>
+		<p class="subtitle">HTML + CSS + JS. Без бэкенда. Через CORS‑прокси.</p>
+	</header>
+
+	<main class="container">
+		<section class="card" id="settings-section">
+			<h2>Настройки</h2>
+			<div class="grid-2">
+				<label class="form-field">
+					<span>Bot Token</span>
+					<input id="botToken" type="text" placeholder="Токен вшит в код" autocomplete="off" disabled />
+				</label>
+				<label class="form-field">
+					<span>Chat ID (получите через бота)</span>
+					<input id="chatId" type="text" placeholder="например, 123456789" autocomplete="off" />
+				</label>
+				<label class="form-field">
+					<span>CORS прокси (prefix режим)</span>
+					<input id="proxyBase" type="text" placeholder="https://cors.isomorphic-git.org/" />
+				</label>
+				<label class="form-field">
+					<span>API база (по умолчанию не менять)</span>
+					<input id="apiBase" type="text" value="https://api.telegram.org" />
+				</label>
+			</div>
+			<div class="row">
+				<button id="saveSettings" class="btn primary">Сохранить</button>
+				<button id="clearSettings" class="btn">Сбросить</button>
+				<span id="settingsStatus" class="status"></span>
+			</div>
+			<p class="hint">Примечание: Браузерные запросы к Telegram Bot API требуют CORS‑прокси. Рекомендуем: <code>https://cors.isomorphic-git.org/</code></p>
+		</section>
+
+		<section class="card" id="auth-section">
+			<h2>Авторизация (подтверждение в чате)</h2>
+			<div class="row">
+				<button id="sendAuth" class="btn">Отправить смс с кнопками</button>
+				<button id="pollAuth" class="btn">Начать проверку ответа</button>
+				<span id="authStatus" class="status"></span>
+			</div>
+			<p class="hint">Сайт отправит сообщение с кнопками "Да"/"Нет" в ваш чат. Затем начнётся опрос обновлений для фиксации нажатия.</p>
+		</section>
+
+		<section class="card" id="upload-section">
+			<h2>Загрузка файла в Telegram</h2>
+			<div class="row wrap">
+				<input id="fileInput" type="file" />
+				<button id="sendFile" class="btn primary">Отправить файл</button>
+				<progress id="uploadProgress" max="100" value="0" class="hidden"></progress>
+				<span id="uploadStatus" class="status"></span>
+			</div>
+			<div id="uploadResult" class="result"></div>
+		</section>
+
+		<section class="card" id="download-section">
+			<h2>Скачать файл из Telegram по file_id</h2>
+			<div class="grid-2">
+				<label class="form-field">
+					<span>file_id</span>
+					<input id="fileIdInput" type="text" placeholder="Введите file_id (из ответа на загрузку)" />
+				</label>
+				<label class="form-field">
+					<span>Формат ссылки</span>
+					<select id="downloadMode">
+						<option value="direct" selected>Прямая ссылка (навигация)</option>
+						<option value="proxied">Через прокси (если нужно)</option>
+					</select>
+				</label>
+			</div>
+			<div class="row">
+				<button id="buildLink" class="btn">Получить ссылку</button>
+				<span id="downloadStatus" class="status"></span>
+			</div>
+			<div id="downloadResult" class="result"></div>
+			<p class="hint">Прямая ссылка вида <code>https://api.telegram.org/file/bot&lt;TOKEN&gt;/&lt;file_path&gt;</code> обычно скачивается без CORS, т.к. это переход по ссылке.</p>
+		</section>
+
+		<section class="card" id="help-section">
+			<h2>Помощь</h2>
+			<ul>
+				<li><b>Как получить chat ID?</b> Напишите своему боту любое сообщение, затем используйте кнопку "Начать проверку ответа" — в логах ниже будут видны обновления и ID. Либо используйте сторонние боты типа <code>@userinfobot</code>.</li>
+				<li><b>Безопасность:</b> Не храните постоянный токен на общедоступных ПК. Токен хранится локально в вашем браузере.</li>
+				<li><b>CORS:</b> Прямые запросы из браузера к Telegram Bot API блокируются. Используйте CORS‑прокси с префиксом URL, напр. <code>https://cors.isomorphic-git.org/</code>.</li>
+			</ul>
+		</section>
+
+		<section class="card" id="logs-section">
+			<h2>Логи</h2>
+			<pre id="logs" class="logs"></pre>
+		</section>
+	</main>
+
+	<footer class="app-footer">
+		<span>© 2025 MiniFile</span>
+	</footer>
+
+	<script src="app.js"></script>
+</body>
+</html>
+
+
