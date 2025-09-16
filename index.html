@@ -3,7 +3,7 @@
 <head>
 	<meta charset="UTF-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-	<title>MiniFile ↔ Telegram Bot (без бэкенда)</title>
+	<title>MiniFile</title>
 	<link rel="stylesheet" href="styles.css" />
 	<link rel="preconnect" href="https://fonts.googleapis.com">
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -11,8 +11,8 @@
 </head>
 <body>
 	<header class="app-header">
-		<h1>MiniFile ↔ Telegram Bot</h1>
-		<p class="subtitle">HTML + CSS + JS. Без бэкенда. Через CORS‑прокси.</p>
+		<h1>MiniFile</h1>
+		<p class="subtitle">Через CORS‑прокси</p>
 	</header>
 
 	<main class="container">
@@ -49,6 +49,7 @@
 			<div class="row">
 				<button id="sendAuth" class="btn">Отправить смс с кнопками</button>
 				<button id="pollAuth" class="btn">Начать проверку ответа</button>
+				<button id="startSync" class="btn primary">Начать синхронизацию файлов</button>
 				<span id="authStatus" class="status"></span>
 			</div>
 			<p class="hint">Сайт отправит сообщение с кнопками "Да"/"Нет" в ваш чат. Затем начнётся опрос обновлений для фиксации нажатия.</p>
@@ -57,7 +58,8 @@
 		<section class="card" id="upload-section">
 			<h2>Загрузка файла в Telegram</h2>
 			<div class="row wrap">
-				<input id="fileInput" type="file" />
+				<input id="fileInput" type="file" style="display:none" />
+				<button id="pickFile" class="btn">Выбрать файл</button>
 				<button id="sendFile" class="btn primary">Отправить файл</button>
 				<progress id="uploadProgress" max="100" value="0" class="hidden"></progress>
 				<span id="uploadStatus" class="status"></span>
@@ -86,6 +88,22 @@
 			</div>
 			<div id="downloadResult" class="result"></div>
 			<p class="hint">Прямая ссылка вида <code>https://api.telegram.org/file/bot&lt;TOKEN&gt;/&lt;file_path&gt;</code> обычно скачивается без CORS, т.к. это переход по ссылке.</p>
+		</section>
+
+		<section class="card" id="messages-section">
+			<h2>Сообщения</h2>
+			<div class="row wrap">
+				<input id="messageInput" type="text" placeholder="Введите текст сообщения" class="message-input" />
+				<button id="sendMessageBtn" class="btn primary">Отправить сообщение</button>
+				<span id="messageStatus" class="status"></span>
+			</div>
+			<p class="hint">Получение сообщений и медиа происходит при запущенной синхронизации. Нажмите "Начать синхронизацию файлов" в блоке авторизации.</p>
+		</section>
+
+		<section class="card" id="gallery-section">
+			<h2>Файлы из Telegram</h2>
+			<p class="hint">После нажатия "Да" или кнопки "Начать синхронизацию файлов" новые файлы, отправленные в чат боту, будут появляться здесь автоматически.</p>
+			<div id="gallery" class="gallery"></div>
 		</section>
 
 		<section class="card" id="help-section">

