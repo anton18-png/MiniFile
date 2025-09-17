@@ -15,7 +15,61 @@
 		<p class="subtitle">Через CORS‑прокси</p>
 	</header>
 
-	<main class="container">
+	<div class="app-layout">
+		<aside class="sidebar" role="navigation" aria-label="Навигация по разделам">
+			<div class="brand">
+				<div class="brand-icon">⚡</div>
+				<div class="brand-text">MiniFile</div>
+			</div>
+			
+			<div class="tab-groups">
+				<div class="tab-group">
+					<div class="group-title">Основные функции</div>
+					<nav class="tabs">
+						<button class="tab-link" data-target="auth-section">
+							<span class="tab-icon">🔐</span>
+							<span class="tab-text">Авторизация</span>
+						</button>
+						<button class="tab-link" data-target="upload-section">
+							<span class="tab-icon">📤</span>
+							<span class="tab-text">Загрузка</span>
+						</button>
+						<button class="tab-link" data-target="download-section">
+							<span class="tab-icon">📥</span>
+							<span class="tab-text">Скачать</span>
+						</button>
+						<button class="tab-link" data-target="messages-section">
+							<span class="tab-icon">💬</span>
+							<span class="tab-text">Сообщения</span>
+						</button>
+						<button class="tab-link" data-target="gallery-section">
+							<span class="tab-icon">📁</span>
+							<span class="tab-text">Файлы</span>
+						</button>
+					</nav>
+				</div>
+				
+				<div class="tab-group">
+					<div class="group-title">Управление</div>
+					<nav class="tabs">
+						<button class="tab-link active" data-target="settings-section">
+							<span class="tab-icon">⚙️</span>
+							<span class="tab-text">Настройки</span>
+						</button>
+						<button class="tab-link" data-target="help-section">
+							<span class="tab-icon">❓</span>
+							<span class="tab-text">Помощь</span>
+						</button>
+						<button class="tab-link" data-target="logs-section">
+							<span class="tab-icon">📋</span>
+							<span class="tab-text">Логи</span>
+						</button>
+					</nav>
+				</div>
+			</div>
+		</aside>
+
+		<main class="container tab-content">
 		<section class="card" id="settings-section">
 			<h2>Настройки</h2>
 			<div class="grid-2">
@@ -98,6 +152,11 @@
 				<span id="messageStatus" class="status"></span>
 			</div>
 			<p class="hint">Получение сообщений и медиа происходит при запущенной синхронизации. Нажмите "Начать синхронизацию файлов" в блоке авторизации.</p>
+			
+			<div class="messages-container">
+				<h3>Отправленные сообщения</h3>
+				<div id="sentMessages" class="messages-list"></div>
+			</div>
 		</section>
 
 		<section class="card" id="gallery-section">
@@ -119,11 +178,13 @@
 			<h2>Логи</h2>
 			<pre id="logs" class="logs"></pre>
 		</section>
-	</main>
+		</main>
+	</div>
 
+	<!-- <br><br><br><br><br><br><br><br>
 	<footer class="app-footer">
 		<span>© 2025 MiniFile</span>
-	</footer>
+	</footer> -->
 
 	<script src="app.js"></script>
 </body>

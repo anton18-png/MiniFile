@@ -33,7 +33,45 @@
 		messageStatus: document.getElementById('messageStatus'),
 		gallery: document.getElementById('gallery'),
 		logs: document.getElementById('logs'),
+		sentMessages: document.getElementById('sentMessages'),
 	};
+
+	// Tabs: sidebar navigation between cards
+	function initTabs() {
+		const tabButtons = Array.from(document.querySelectorAll('.tab-link'));
+		const sections = Array.from(document.querySelectorAll('.tab-content > .card'));
+		if (!tabButtons.length || !sections.length) return;
+
+		function activate(targetId, fromHash) {
+			sections.forEach(s => s.classList.toggle('active', s.id === targetId));
+			tabButtons.forEach(btn => {
+				const id = btn.getAttribute('data-target');
+				const isActive = id === targetId;
+				btn.classList.toggle('active', isActive);
+				btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
+			});
+			if (!fromHash) {
+				history.replaceState(null, '', `#${targetId}`);
+			}
+		}
+
+		tabButtons.forEach(btn => {
+			btn.addEventListener('click', (e) => {
+				e.preventDefault();
+				const targetId = btn.getAttribute('data-target');
+				if (targetId) activate(targetId, false);
+			});
+		});
+
+		window.addEventListener('hashchange', () => {
+			const id = (location.hash || '').replace('#', '');
+			const exists = sections.some(s => s.id === id);
+			activate(exists ? id : sections[0].id, true);
+		});
+
+		const initial = (location.hash || '').replace('#', '') || (sections[0] && sections[0].id) || null;
+		if (initial) activate(initial, true);
+	}
 
 	function log(message, data) {
 		const time = new Date().toLocaleTimeString();
@@ -480,11 +518,44 @@
 		}
 	}
 
+	// Display sent messages
+	function addSentMessage(text, status = 'sent', timestamp = null) {
+		if (!els.sentMessages) return;
+		
+		const time = timestamp || new Date();
+		const timeStr = time.toLocaleTimeString();
+		
+		const messageDiv = document.createElement('div');
+		messageDiv.className = 'message-item';
+		messageDiv.innerHTML = `
+			<div class="message-header">
+				<span class="message-time">${timeStr}</span>
+				<span class="message-status ${status}">${status === 'sent' ? 'Отправлено' : 'Ошибка'}</span>
+			</div>
+			<div class="message-text">${text}</div>
+		`;
+		
+		els.sentMessages.insertBefore(messageDiv, els.sentMessages.firstChild);
+		
+		// Keep only last 50 messages
+		const messages = els.sentMessages.children;
+		if (messages.length > 50) {
+			els.sentMessages.removeChild(messages[messages.length - 1]);
+		}
+	}
+
 	async function sendTextMessage() {
 		const { chatId } = getSettings();
-		if (!chatId) { els.messageStatus.textContent = 'Укажите Chat ID'; return; }
+		if (!chatId) { 
+			els.messageStatus.textContent = 'Укажите Chat ID'; 
+			addSentMessage('Ошибка: не указан Chat ID', 'error');
+			return; 
+		}
 		const text = (els.messageInput.value || '').trim();
-		if (!text) { els.messageStatus.textContent = 'Введите текст'; return; }
+		if (!text) { 
+			els.messageStatus.textContent = 'Введите текст'; 
+			return; 
+		}
 		els.messageStatus.textContent = 'Отправка...';
 		try {
 			const res = await tgFetch('sendMessage', {
@@ -493,6 +564,7 @@
 				body: JSON.stringify({ chat_id: chatId, text }),
 			});
 			els.messageStatus.textContent = 'Отправлено';
+			addSentMessage(text, 'sent');
 			els.messageInput.value = '';
 			log('sendMessage (текст) результат', res);
 			// Автокопирование текста в FORWARD_CHAT_ID
@@ -510,6 +582,7 @@
 			}
 		} catch (e) {
 			els.messageStatus.textContent = 'Ошибка';
+			addSentMessage(text, 'error');
 			log('Ошибка отправки текста', String(e));
 		}
 	}
@@ -525,6 +598,7 @@
 	els.pickFile && els.pickFile.addEventListener('click', () => els.fileInput && els.fileInput.click());
 	els.sendMessageBtn && els.sendMessageBtn.addEventListener('click', sendTextMessage);
 
+	initTabs();
 	loadSettings();
 	log('Готово. Укажите токен, chat id и при необходимости CORS‑прокси.');
 })();
