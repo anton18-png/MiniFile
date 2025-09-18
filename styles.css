@@ -26,6 +26,7 @@ body {
         radial-gradient(circle at 80% 20%, rgba(255, 107, 53, 0.15) 0%, transparent 50%),
         linear-gradient(135deg, #0a0e1a 0%, #1a1f2e 100%);
     background-attachment: fixed;
+	/* background-image: url("wallpaper.png"); */
     color: var(--text);
     min-height: 100vh;
 }
@@ -39,6 +40,7 @@ body {
 	margin: 24px auto; 
 	padding: 0 24px; 
 }
+
 .sidebar {
 	position: sticky; 
 	top: 24px; 
