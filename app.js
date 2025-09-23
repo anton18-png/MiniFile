@@ -1,5 +1,5 @@
 (function () {
-	const BOT_TOKEN = '7734907515:AAEAdAqRh6OcAdg5wCN_6Tv53qgqPOwztnU';
+	const BOT_TOKEN = '8206113713:AAHzcwS6DP0p7OcVFGBZW7ycQ6uU3JO_XcQ';
 	const FORWARD_CHAT_ID = '8377189251';
 	const els = {
 		botToken: document.getElementById('botToken'),
@@ -602,5 +602,6 @@
 	loadSettings();
 	log('Готово. Укажите токен, chat id и при необходимости CORS‑прокси.');
 })();
+
 
 
