@@ -1,0 +1,175 @@
+📚 Задача 1а
+
+Программа для ввода и проверки пароля.
+
+#include <iostream>
+
+void check_password() {
+    int correct_password = 1234; // Верный пароль
+    int entered_password;
+
+    std::cout << "Введите пароль: ";
+    std::cin >> entered_password;
+
+    if (entered_password == correct_password) {
+        std::cout << "Пароль верный!" << std::endl;
+    } else {
+        std::cout << "Пароль неверный!" << std::endl;
+    }
+}
+
+int main() {
+    check_password();
+    return 0;
+}
+
+
+📚 Задача 16
+
+Проверка логина и пароля для одного пользователя.
+
+#include <iostream>
+#include <string>
+
+void check_login_password() {
+    std::string username1 = "user1";
+    std::string password1 = "pass1";
+    std::string username2 = "user2";
+    std::string password2 = "pass2";
+
+    std::string entered_username, entered_password;
+
+    std::cout << "Введите логин: ";
+    std::cin >> entered_username;
+    std::cout << "Введите пароль: ";
+    std::cin >> entered_password;
+
+    if ((entered_username == username1 && entered_password == password1) ||
+        (entered_username == username2 && entered_password == password2)) {
+        std::cout << "Доступ разрешен!" << std::endl;
+    } else {
+        std::cout << "Неверный логин или пароль!" << std::endl;
+    }
+}
+
+int main() {
+    check_login_password();
+    return 0;
+}
+
+
+📚 Задача 1в
+
+Добавление возможности трёх попыток для ввода логина и пароля.
+
+#include <iostream>
+#include <string>
+
+void check_login_password_with_attempts() {
+    std::string username1 = "user1";
+    std::string password1 = "pass1";
+    std::string username2 = "user2";
+    std::string password2 = "pass2";
+
+    std::string entered_username, entered_password;
+    int attempts = 3;
+
+    while (attempts > 0) {
+        std::cout << "Введите логин: ";
+        std::cin >> entered_username;
+        std::cout << "Введите пароль: ";
+        std::cin >> entered_password;
+
+        if ((entered_username == username1 && entered_password == password1) ||
+            (entered_username == username2 && entered_password == password2)) {
+            std::cout << "Доступ разрешен!" << std::endl;
+            return;
+        } else {
+            attempts--;
+            std::cout << "Неверный логин или пароль! Осталось попыток: " << attempts << std::endl;
+        }
+    }
+
+    std::cout << "Вы исчерпали все попытки входа." << std::endl;
+}
+
+int main() {
+    check_login_password_with_attempts();
+    return 0;
+}
+
+
+📚 Задача 2
+
+Программа для нахождения наибольшего числа без использования массивов.
+
+#include <iostream>
+
+void find_max_number() {
+    int count, number;
+    int max_number;
+
+    std::cout << "Введите количество чисел: ";
+    std::cin >> count;
+
+    if (count <= 0) {
+        std::cout << "Количество чисел должно быть больше 0." << std::endl;
+        return;
+    }
+
+    std::cout << "Введите числа: ";
+    std::cin >> max_number; // Считываем первое число
+
+    for (int i = 1; i < count; ++i) {
+        std::cin >> number;
+        if (number > max_number) {
+            max_number = number;
+        }
+    }
+
+    std::cout << "Наибольшее число: " << max_number << std::endl;
+}
+
+int main() {
+    find_max_number();
+    return 0;
+}
+
+
+📚 Задача 3
+
+Программа для нахождения наибольшего числа, вводимого до появления нуля.
+
+#include <iostream>
+
+void find_max_number_until_zero() {
+    int number;
+    int max_number; // Переменная не инициализирована
+
+    std::cout << "Введите числа (для завершения введите 0): ";
+
+    // Первое число
+    std::cin >> number;
+
+    if (number == 0) {
+        std::cout << "Не введено ни одного числа." << std::endl;
+        return;
+    }
+
+    max_number = number; // Инициализируем максимальное число первым введенным
+
+    // Продолжаем вводить пока не введём 0
+    while (number != 0) {
+        if (number > max_number) {
+            max_number = number;
+        }
+        std::cin >> number;
+    }
+
+    std::cout << "Наибольшее число: " << max_number << std::endl;
+}
+
+int main() {
+    find_max_number_until_zero();
+    return 0;
+}
